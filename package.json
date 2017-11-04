@@ -1,0 +1,24 @@
+{
+  "name": "acl_gist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Aditya Agarwal <adityaa803@gmail.com> (http://adi.surge.sh/)",
+  "license": "ISC",
+  "dependencies": {
+    "acl": "^0.4.11",
+    "body-parser": "^1.18.2",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "method-override": "^2.3.10",
+    "mongodb": "^2.2.33",
+    "passport": "^0.4.0",
+    "passport-local": "^1.0.0"
+  }
+}
