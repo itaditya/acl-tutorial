@@ -98,12 +98,18 @@ function set_roles() {
     allows: [{
       resources: '/secret',
       permissions: '*'
+    }, {
+      resources: '/users',
+      permissions: ['get_list']
     }]
   }, {
     roles: 'user',
     allows: [{
       resources: '/secret',
       permissions: 'get'
+    }, {
+      resources: '/users',
+      permissions: ['get']
     }]
   }, {
     roles: 'guest',
@@ -126,12 +132,29 @@ function set_routes() {
     });
   });
 
+  //  http://localhost:3500/users
+  app.get('/users', [authenticated, acl.middleware(1, get_user_id, 'get_list')], (req, res) => {
+    res.send(users);
+  })
+
+  //  http://localhost:3500/users/1
+  app.get('/users/:id', [authenticated, acl.middleware(2, get_user_id, 'get')], (req, res) => {
+    const {
+      id
+    } = req.params;
+    find_user_by_id(id, (err, user) => {
+      res.send(user);
+    })
+  })
+
   // Only for users and higher
+  //  http://localhost:3500/secret
   app.get('/secret', [authenticated, acl.middleware(1, get_user_id)], (req, res) => {
     res.send('Welcome Sir!');
   });
 
   // Logging out the current user
+  //  http://localhost:3500/logout
   app.get('/logout', (req, res) => {
     req.logout();
     res.send('Logged out!');
@@ -140,19 +163,31 @@ function set_routes() {
   // Logging in a user
   //  http://localhost:3500/login?username=bob&password=secret
   app.get('/login', passport.authenticate('local', {}), (req, res) => {
-    res.send('Logged in!');
+    const userId = get_user_id(req, res);
+    acl.allow(userId, [`/users/${userId}`], 'get', () => {
+      acl.addUserRoles(userId, ['user', userId]);
+      res.send(`${userId} is logged in!`);
+    });
   });
 
   // Setting a new role
+  //  http://localhost:3500/allow/1/admin
   app.get('/allow/:user/:role', (req, res, next) => {
-    const { user, role } = req.params;
+    const {
+      user,
+      role
+    } = req.params;
     acl.addUserRoles(user, role);
     res.send(`${user} is a ${role}`);
   });
 
   // Unsetting a role
+  //  http://localhost:3500/disallow/1/admin
   app.get('/disallow/:user/:role', (req, res, next) => {
-    const { user, role } = req.params;
+    const {
+      user,
+      role
+    } = req.params;
     acl.removeUserRoles(user, role);
     res.send(`${user} is not a ${role} anymore.`);
   });
@@ -180,7 +215,7 @@ function find_user_by_id(id, cb) {
 // Helper used in the local strategy setup by passport
 function find_by_username(username, cb) {
   const user = users.find(user => user.username === username);
-  if(user) {
+  if (user) {
     return cb(null, user);
   }
   return cb(null, null);
